@@ -11,6 +11,7 @@ import {
   Bell,
   Clock,
   Settings,
+  Sparkles,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -29,8 +30,8 @@ const navItems = [
 export function Sidebar({ pathname }: SidebarProps) {
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 border-r bg-white dark:bg-zinc-950 z-40">
-      {/* Logo */}
-      <div className="flex flex-col items-start gap-1 px-6 py-4 border-b">
+      {/* Logo with gradient background */}
+      <div className="flex flex-col items-start gap-1 px-6 py-4 border-b bg-gradient-to-b from-emerald-50/80 to-transparent dark:from-emerald-950/20 dark:to-transparent">
         <Logo size="md" />
         <span className="text-xs text-muted-foreground ml-1">
           QuickFlip Commerce
@@ -48,10 +49,10 @@ export function Sidebar({ pathname }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group",
                 isActive
                   ? "text-white"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-emerald-50/60 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
               )}
             >
               {isActive && (
@@ -60,6 +61,10 @@ export function Sidebar({ pathname }: SidebarProps) {
                   className="absolute inset-0 rounded-lg bg-emerald-500"
                   transition={{ type: "spring", stiffness: 350, damping: 30 }}
                 />
+              )}
+              {/* Hover left border indicator */}
+              {!isActive && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-0 w-[3px] rounded-r-full bg-emerald-400 transition-all duration-200 group-hover:h-5" />
               )}
               <item.icon className="relative z-10 h-5 w-5 shrink-0" />
               <span className="relative z-10">{item.label}</span>
@@ -76,7 +81,13 @@ export function Sidebar({ pathname }: SidebarProps) {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium">QuickFlip Commerce</span>
-            <span className="text-xs text-muted-foreground">Growth Plan</span>
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              Growth Plan
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                <Sparkles className="h-2.5 w-2.5" />
+                Pro
+              </span>
+            </span>
           </div>
         </div>
       </div>

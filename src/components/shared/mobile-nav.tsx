@@ -24,7 +24,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden items-end justify-around border-t bg-white dark:bg-zinc-950 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden items-end justify-around border-t bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl pb-safe">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
 
@@ -37,7 +37,7 @@ export function MobileNav() {
               >
                 <div
                   className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-full shadow-lg",
+                    "flex h-14 w-14 items-center justify-center rounded-full shadow-lg scanner-pulse",
                     "bg-emerald-500 text-white"
                   )}
                 >
