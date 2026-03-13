@@ -7,6 +7,7 @@ import { formatCurrency, type BarcodeScan } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   ScanBarcode,
   Camera,
@@ -18,6 +19,10 @@ import {
   DollarSign,
   ShoppingCart,
   Zap,
+  Share2,
+  Bookmark,
+  Copy,
+  Heart,
 } from "lucide-react";
 
 // ─── Animated Counter ────────────────────────────────────────────────
@@ -93,11 +98,82 @@ function ScannerCorner({
   );
 }
 
+// ─── Pulse Rings during scanning ─────────────────────────────────────
+function PulseRings() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full border-2 border-emerald-400/60"
+          initial={{ width: 40, height: 40, opacity: 0.7 }}
+          animate={{
+            width: [40, 180 + i * 40],
+            height: [40, 180 + i * 40],
+            opacity: [0.6, 0],
+            borderColor: [
+              "rgba(52, 211, 153, 0.6)",
+              "rgba(16, 185, 129, 0)",
+            ],
+          }}
+          transition={{
+            duration: 1.8,
+            repeat: Infinity,
+            delay: i * 0.4,
+            ease: "easeOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Particle Burst for BUY verdict ─────────────────────────────────
+function ParticleBurst() {
+  const particles = Array.from({ length: 10 }, (_, i) => {
+    const angle = (i / 10) * 2 * Math.PI + (Math.random() - 0.5) * 0.5;
+    const distance = 50 + Math.random() * 40;
+    return {
+      id: i,
+      x: Math.cos(angle) * distance,
+      y: Math.sin(angle) * distance,
+      size: 4 + Math.random() * 4,
+      delay: Math.random() * 0.15,
+    };
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full bg-emerald-400"
+          style={{ width: p.size, height: p.size }}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+          animate={{
+            x: p.x,
+            y: p.y,
+            opacity: [1, 0.8, 0],
+            scale: [1, 1.2, 0.5],
+          }}
+          transition={{
+            duration: 0.7,
+            delay: 0.85 + p.delay,
+            ease: "easeOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function ScanPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<BarcodeScan | null>(null);
   const [editableCogs, setEditableCogs] = useState<number>(0);
   const [flashActive, setFlashActive] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
 
   const handleSimulateScan = () => {
     if (isScanning) return;
@@ -107,7 +183,7 @@ export default function ScanPage() {
     // Flash effect
     setTimeout(() => {
       setFlashActive(true);
-      setTimeout(() => setFlashActive(false), 200);
+      setTimeout(() => setFlashActive(false), 250);
     }, 1200);
 
     // Show result after 1.5s
@@ -119,19 +195,35 @@ export default function ScanPage() {
       setScanResult(randomScan);
       setEditableCogs(randomScan.cogs);
       setIsScanning(false);
+      // Haptic feedback on scan complete
+      navigator.vibrate?.(200);
     }, 1500);
   };
 
   const handleSelectScan = (scan: BarcodeScan) => {
     setScanResult(scan);
     setEditableCogs(scan.cogs);
-    // Scroll to top of result
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleReset = () => {
     setScanResult(null);
     setIsScanning(false);
+  };
+
+  const handleShareResult = () => {
+    if (!scanResult) return;
+    const verdictText = scanResult.verdict === "buy" ? "BUY" : "SKIP";
+    const text = `ProfitPulse Scan: ${scanResult.productName} | Revenue: ${formatCurrency(scanResult.sellingPrice)} | Profit: ${formatCurrency(currentNetProfit)} | Margin: ${currentMargin.toFixed(1)}% | Verdict: ${verdictText}`;
+    navigator.clipboard.writeText(text);
+    setShareToast(true);
+    setTimeout(() => setShareToast(false), 1800);
+  };
+
+  const handleSaveToWatchlist = () => {
+    setSavedToast(true);
+    navigator.vibrate?.(100);
+    setTimeout(() => setSavedToast(false), 1800);
   };
 
   // Recalculate profit when COGS changes
@@ -150,12 +242,12 @@ export default function ScanPage() {
     <div className="min-h-screen pb-24 sm:pb-8">
       {/* Page Header */}
       <motion.div
-        className="mb-6"
+        className="mb-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 mb-0.5">
           <div className="p-2 rounded-lg bg-emerald-500/10">
             <ScanBarcode className="h-6 w-6 text-emerald-500" />
           </div>
@@ -163,14 +255,14 @@ export default function ScanPage() {
             Barcode Scanner
           </h1>
         </div>
-        <p className="text-slate-500 ml-[52px]">
+        <p className="text-slate-500 ml-[52px] text-sm">
           Scan any product barcode to instantly calculate profit
         </p>
       </motion.div>
 
       {/* Scanner Viewfinder */}
       <motion.div
-        className="relative mx-auto max-w-lg mb-8"
+        className="relative mx-auto max-w-lg mb-5"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, delay: 0.1 }}
@@ -217,6 +309,11 @@ export default function ScanPage() {
               ease: "easeInOut",
             }}
           />
+
+          {/* Expanding pulse rings during scan */}
+          <AnimatePresence>
+            {isScanning && <PulseRings />}
+          </AnimatePresence>
 
           {/* Center content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
@@ -283,37 +380,41 @@ export default function ScanPage() {
             </AnimatePresence>
           </div>
 
-          {/* Flash effect */}
+          {/* Flash effect — white-to-emerald gradient */}
           <AnimatePresence>
             {flashActive && (
               <motion.div
-                className="absolute inset-0 bg-white"
-                initial={{ opacity: 0.8 }}
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(16,185,129,0.5))",
+                }}
+                initial={{ opacity: 0.85 }}
                 animate={{ opacity: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.35 }}
               />
             )}
           </AnimatePresence>
         </div>
 
         {/* Scan button */}
-        <div className="flex justify-center mt-5">
+        <div className="flex justify-center mt-4">
           {scanResult ? (
-            <motion.button
-              className="flex items-center gap-2 px-8 py-3 rounded-xl bg-slate-700 text-white font-semibold text-lg shadow-lg hover:bg-slate-600 transition-colors"
-              onClick={handleReset}
+            <motion.div
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <ScanBarcode className="h-5 w-5" />
-              Scan Another
-            </motion.button>
+              <Button
+                className="flex items-center gap-2 px-8 py-3 h-auto rounded-xl bg-slate-700 text-white font-semibold text-lg shadow-lg hover:bg-slate-600"
+                onClick={handleReset}
+              >
+                <ScanBarcode className="h-5 w-5" />
+                Scan Another
+              </Button>
+            </motion.div>
           ) : (
-            <motion.button
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 text-white font-semibold text-lg shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 transition-colors disabled:opacity-50"
-              onClick={handleSimulateScan}
-              disabled={isScanning}
+            <motion.div
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               animate={
@@ -328,10 +429,17 @@ export default function ScanPage() {
                   : {}
               }
               transition={{ duration: 2, repeat: Infinity }}
+              className="rounded-xl"
             >
-              <ScanBarcode className="h-5 w-5" />
-              {isScanning ? "Scanning..." : "Tap to Simulate Scan"}
-            </motion.button>
+              <Button
+                className="flex items-center gap-2 px-8 py-3.5 h-auto rounded-xl bg-emerald-500 text-white font-semibold text-lg shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 disabled:opacity-50"
+                onClick={handleSimulateScan}
+                disabled={isScanning}
+              >
+                <ScanBarcode className="h-5 w-5" />
+                {isScanning ? "Scanning..." : "Tap to Simulate Scan"}
+              </Button>
+            </motion.div>
           )}
         </div>
       </motion.div>
@@ -341,7 +449,7 @@ export default function ScanPage() {
         {scanResult && (
           <motion.div
             key={scanResult.id}
-            className="max-w-lg mx-auto mb-10"
+            className="max-w-lg mx-auto mb-6"
             initial={{ opacity: 0, scale: 0.8, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
@@ -354,20 +462,20 @@ export default function ScanPage() {
           >
             <Card className="overflow-hidden border-slate-200 shadow-xl">
               {/* Product Header */}
-              <div className="p-5 pb-4 border-b border-slate-100">
-                <div className="flex gap-4 items-start">
+              <div className="px-5 pt-4 pb-3 border-b border-slate-100">
+                <div className="flex gap-3 items-start">
                   {/* Image placeholder */}
                   <motion.div
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0"
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0"
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.15, type: "spring" }}
                   >
-                    <Package className="h-8 w-8 text-slate-400" />
+                    <Package className="h-7 w-7 text-slate-400" />
                   </motion.div>
                   <div className="flex-1 min-w-0">
                     <motion.h3
-                      className="text-lg sm:text-xl font-bold text-slate-900 leading-tight"
+                      className="text-base sm:text-lg font-bold text-slate-900 leading-tight"
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2 }}
@@ -381,7 +489,7 @@ export default function ScanPage() {
                     >
                       <Badge
                         variant="secondary"
-                        className="mt-1.5 font-mono text-xs"
+                        className="mt-1 font-mono text-xs"
                       >
                         UPC: {scanResult.upc}
                       </Badge>
@@ -391,7 +499,7 @@ export default function ScanPage() {
               </div>
 
               {/* Selling Price */}
-              <div className="px-5 pt-4 pb-3">
+              <div className="px-5 pt-3 pb-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-500 font-medium">
                     Selling Price
@@ -407,46 +515,48 @@ export default function ScanPage() {
                 </div>
               </div>
 
-              {/* Fee Breakdown */}
-              <div className="px-5 pb-3 space-y-2">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              {/* Fee Breakdown — compact */}
+              <div className="px-5 pb-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Fee Breakdown
                 </p>
-                {[
-                  {
-                    label: "Referral Fee",
-                    value: scanResult.fees.referralFee,
-                    delay: 0.3,
-                  },
-                  {
-                    label: "FBA Fee",
-                    value: scanResult.fees.fbaFee,
-                    delay: 0.35,
-                  },
-                  {
-                    label: "Storage",
-                    value: scanResult.fees.storageFee,
-                    delay: 0.4,
-                  },
-                ].map((fee) => (
-                  <motion.div
-                    key={fee.label}
-                    className="flex items-center justify-between text-sm"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: fee.delay }}
-                  >
-                    <span className="text-slate-500">{fee.label}</span>
-                    <span className="text-red-500 font-medium">
-                      -{formatCurrency(fee.value)}
-                    </span>
-                  </motion.div>
-                ))}
+                <div className="space-y-1">
+                  {[
+                    {
+                      label: "Referral Fee",
+                      value: scanResult.fees.referralFee,
+                      delay: 0.3,
+                    },
+                    {
+                      label: "FBA Fee",
+                      value: scanResult.fees.fbaFee,
+                      delay: 0.35,
+                    },
+                    {
+                      label: "Storage",
+                      value: scanResult.fees.storageFee,
+                      delay: 0.4,
+                    },
+                  ].map((fee) => (
+                    <motion.div
+                      key={fee.label}
+                      className="flex items-center justify-between text-sm py-0.5"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: fee.delay }}
+                    >
+                      <span className="text-slate-500">{fee.label}</span>
+                      <span className="text-red-500 font-medium font-mono text-xs">
+                        -{formatCurrency(fee.value)}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
 
               {/* COGS Input */}
               <motion.div
-                className="px-5 pb-3"
+                className="px-5 pb-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.45 }}
@@ -472,16 +582,16 @@ export default function ScanPage() {
               </motion.div>
 
               {/* Separator */}
-              <div className="mx-5 border-t border-dashed border-slate-200 my-2" />
+              <div className="mx-5 border-t border-dashed border-slate-200 my-1.5" />
 
               {/* Net Profit & Margin */}
               <motion.div
-                className="px-5 py-3"
+                className="px-5 py-2"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-semibold text-slate-700">
                     Net Profit
                   </span>
@@ -505,20 +615,20 @@ export default function ScanPage() {
 
               {/* Sales Velocity & Competition */}
               <motion.div
-                className="px-5 pb-3 flex gap-4"
+                className="px-5 pb-2 flex gap-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.55 }}
               >
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <ShoppingCart className="h-4 w-4 text-slate-400" />
+                <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                  <ShoppingCart className="h-3.5 w-3.5 text-slate-400" />
                   <span>
                     ~{scanResult.monthlySalesVelocity}{" "}
                     <span className="text-slate-400">units/mo</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Users className="h-4 w-4 text-slate-400" />
+                <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                  <Users className="h-3.5 w-3.5 text-slate-400" />
                   <span>
                     {scanResult.competitorCount}{" "}
                     <span className="text-slate-400">sellers</span>
@@ -528,7 +638,7 @@ export default function ScanPage() {
 
               {/* GO / NO-GO Verdict */}
               <motion.div
-                className="p-5 pt-2"
+                className="px-5 pt-1 pb-3 relative"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{
@@ -539,36 +649,40 @@ export default function ScanPage() {
                 }}
               >
                 {scanResult.verdict === "buy" ? (
-                  <motion.div
-                    className="flex items-center justify-center gap-3 py-4 rounded-xl bg-emerald-50 border-2 border-emerald-400"
-                    animate={{
-                      boxShadow: [
-                        "0 0 0px rgba(16,185,129,0)",
-                        "0 0 25px rgba(16,185,129,0.35)",
-                        "0 0 0px rgba(16,185,129,0)",
-                      ],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
+                  <div className="relative">
                     <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{
-                        delay: 0.85,
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 15,
+                      className="flex items-center justify-center gap-3 py-3 rounded-xl bg-emerald-50 border-2 border-emerald-400"
+                      animate={{
+                        boxShadow: [
+                          "0 0 0px rgba(16,185,129,0)",
+                          "0 0 25px rgba(16,185,129,0.35)",
+                          "0 0 0px rgba(16,185,129,0)",
+                        ],
                       }}
+                      transition={{ duration: 2, repeat: Infinity }}
                     >
-                      <Check className="h-8 w-8 text-emerald-600" />
+                      <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{
+                          delay: 0.85,
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 15,
+                        }}
+                      >
+                        <Check className="h-8 w-8 text-emerald-600" />
+                      </motion.div>
+                      <span className="text-2xl font-extrabold text-emerald-600 tracking-wide">
+                        BUY
+                      </span>
                     </motion.div>
-                    <span className="text-2xl font-extrabold text-emerald-600 tracking-wide">
-                      BUY
-                    </span>
-                  </motion.div>
+                    {/* Particle burst on BUY */}
+                    <ParticleBurst />
+                  </div>
                 ) : (
                   <motion.div
-                    className="flex items-center justify-center gap-3 py-4 rounded-xl bg-red-50 border-2 border-red-400"
+                    className="flex items-center justify-center gap-3 py-3 rounded-xl bg-red-50 border-2 border-red-400"
                     animate={{
                       boxShadow: [
                         "0 0 0px rgba(239,68,68,0)",
@@ -597,6 +711,59 @@ export default function ScanPage() {
                 )}
               </motion.div>
             </Card>
+
+            {/* Share & Watchlist Buttons */}
+            <motion.div
+              className="flex gap-3 mt-3 relative"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+            >
+              <motion.div className="flex-1" whileTap={{ scale: 0.97 }}>
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center gap-2 h-10 rounded-xl font-semibold text-sm"
+                  onClick={handleShareResult}
+                >
+                  {shareToast ? (
+                    <>
+                      <Copy className="h-4 w-4 text-emerald-500" />
+                      <span className="text-emerald-600">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4" />
+                      Share Result
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+              <motion.div className="flex-1" whileTap={{ scale: 0.97 }}>
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center gap-2 h-10 rounded-xl font-semibold text-sm"
+                  onClick={handleSaveToWatchlist}
+                >
+                  {savedToast ? (
+                    <>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [0, 1.3, 1] }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        <Heart className="h-4 w-4 text-red-500 fill-red-500" />
+                      </motion.div>
+                      <span className="text-emerald-600">Saved!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark className="h-4 w-4" />
+                      Save to Watchlist
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -608,7 +775,7 @@ export default function ScanPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="h-5 w-5 text-slate-400" />
           <h2 className="text-lg font-bold text-slate-900">Recent Scans</h2>
           <Badge variant="secondary" className="ml-auto text-xs">
@@ -616,7 +783,7 @@ export default function ScanPage() {
           </Badge>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {barcodeScanHistory.slice(0, 15).map((scan, index) => (
             <motion.div
               key={scan.id}
@@ -628,17 +795,17 @@ export default function ScanPage() {
               }}
             >
               <Card
-                className={`p-3 sm:p-4 cursor-pointer transition-all hover:shadow-md hover:border-slate-300 ${
+                className={`p-2.5 sm:p-3 cursor-pointer transition-all hover:shadow-md hover:border-slate-300 ${
                   scanResult?.id === scan.id
                     ? "border-emerald-400 shadow-md ring-1 ring-emerald-400/30"
                     : "border-slate-200"
                 }`}
                 onClick={() => handleSelectScan(scan)}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   {/* Small product icon */}
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                    <Package className="h-5 w-5 text-slate-400" />
+                  <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                    <Package className="h-4 w-4 text-slate-400" />
                   </div>
 
                   {/* Product info */}

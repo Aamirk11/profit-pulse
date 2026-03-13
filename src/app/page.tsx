@@ -36,6 +36,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
+import { Button } from "@/components/ui/button";
 
 // ─── Profit Counter ─────────────────────────────────────────────────────
 const profitValues = [
@@ -985,12 +986,12 @@ export default function LandingPage() {
               placeholder="you@example.com"
               className="flex-1 px-5 py-4 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
             />
-            <button
+            <Button
               type="submit"
-              className="px-8 py-4 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 whitespace-nowrap hover:scale-105"
+              className="px-8 py-4 h-auto rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 whitespace-nowrap hover:scale-105"
             >
               Get Early Access
-            </button>
+            </Button>
           </motion.form>
 
           <AnimatePresence>

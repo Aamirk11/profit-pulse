@@ -15,6 +15,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/shared/empty-state";
 import {
   Select,
   SelectContent,
@@ -192,6 +193,13 @@ export default function SKUProfitabilityPage() {
     setExpandedRow(expandedRow === id ? null : id);
   }
 
+  function clearFilters() {
+    setSearchQuery("");
+    setPlatformFilter("all");
+    setMarginFilter("all");
+    setTrendFilter("all");
+  }
+
   function SortHeader({
     column,
     label,
@@ -303,8 +311,21 @@ export default function SKUProfitabilityPage() {
         </div>
       </Card>
 
+      {/* Empty State */}
+      {sortedSKUs.length === 0 && (
+        <Card>
+          <EmptyState
+            icon={Package}
+            title="No SKUs Match Your Filters"
+            description="Try adjusting your search or filter criteria"
+            actionLabel="Clear Filters"
+            onAction={clearFilters}
+          />
+        </Card>
+      )}
+
       {/* Desktop Table */}
-      <Card className="hidden md:block overflow-hidden">
+      {sortedSKUs.length > 0 && <Card className="hidden md:block overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
@@ -427,10 +448,10 @@ export default function SKUProfitabilityPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Card>}
 
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
+      {sortedSKUs.length > 0 && <div className="md:hidden space-y-3">
         {sortedSKUs.map((sku) => (
           <Card
             key={sku.id}
@@ -534,7 +555,7 @@ export default function SKUProfitabilityPage() {
             </AnimatePresence>
           </Card>
         ))}
-      </div>
+      </div>}
 
       {/* Results Count */}
       <div className="text-center text-sm text-slate-500 pb-4">

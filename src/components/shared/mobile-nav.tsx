@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Package,
   ScanBarcode,
   Bell,
   Clock,
-  Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -30,38 +30,47 @@ export function MobileNav() {
 
         if (item.isCenter) {
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center -mt-5"
-            >
-              <div
-                className={cn(
-                  "flex h-14 w-14 items-center justify-center rounded-full shadow-lg",
-                  "bg-emerald-500 text-white"
-                )}
+            <motion.div key={item.href} whileTap={{ scale: 0.92 }}>
+              <Link
+                href={item.href}
+                className="flex flex-col items-center -mt-5 min-w-[44px] min-h-[44px]"
               >
-                <ScanBarcode className="h-7 w-7" />
-              </div>
-              <span className="mt-1 text-[10px] font-medium text-emerald-500">
-                {item.label}
-              </span>
-            </Link>
+                <div
+                  className={cn(
+                    "flex h-14 w-14 items-center justify-center rounded-full shadow-lg",
+                    "bg-emerald-500 text-white"
+                  )}
+                >
+                  <ScanBarcode className="h-7 w-7" />
+                </div>
+                <span className="mt-1 text-[10px] font-medium text-emerald-500">
+                  {item.label}
+                </span>
+              </Link>
+            </motion.div>
           );
         }
 
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-1",
-              isActive ? "text-emerald-500" : "text-muted-foreground"
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{item.label}</span>
-          </Link>
+          <motion.div key={item.href} whileTap={{ scale: 0.92 }}>
+            <Link
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-0.5 py-2 px-1 min-w-[44px] min-h-[44px] justify-center",
+                isActive ? "text-emerald-500" : "text-muted-foreground"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="activeDot"
+                  className="h-1 w-1 rounded-full bg-emerald-500"
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                />
+              )}
+            </Link>
+          </motion.div>
         );
       })}
     </nav>
